@@ -7,7 +7,7 @@ const tarefas = ref([
 ]);
 
 const novaTarefa = ref('')
-const posicaoAlterar = ref(-1)
+const idAlterar = ref(null)
 const filtro = ref('')
 
 const tarefasPendentes = computed(() => {
@@ -18,54 +18,76 @@ const tarefasConcluidas = computed(() => {
   return tarefas.value.filter(t => t.status == 'concluida').length;
 })
 
+
 const tarefasFiltradas = computed(() => {
-  if (filtro.value.trim() == '') {
-    return tarefas.value;
-  }
-  else {
-    return tarefas.value.filter(t => t.desc.includes(filtro.value))
-  }
-})
+  return tarefas.value.filter(t =>
+    t.desc.toLowerCase().includes(filtro.value.trim().toLowerCase())
+  );
+});
+
 
 function ordenar() {
   tarefas.value.sort((a, b) => a.desc.localeCompare(b.desc, 'pt-BR'))
 }
 
+
+
 function addTarefa() {
-  if (posicaoAlterar.value == -1) {
-    let maiorID = Math.max(...tarefas.value.map(item => item.id));
+  if (!novaTarefa.value.trim()) return;
+
+  if (idAlterar.value === null) {
+    let maiorID = tarefas.value.length
+      ? Math.max(...tarefas.value.map(item => item.id))
+      : 0;
+
     tarefas.value.push({
       id: maiorID + 1,
-      desc: novaTarefa.value,
+      desc: novaTarefa.value.trim(),
       status: 'pendente'
     });
+  } else {
+    const tarefa = tarefas.value.find(t => t.id === idAlterar.value);
+
+    if (tarefa) {
+      tarefa.desc = novaTarefa.value.trim();
+    }
+
+    idAlterar.value = null;
   }
-  else {
-    tarefas.value[posicaoAlterar.value].desc = novaTarefa.value
-    posicaoAlterar.value = -1
-  }
+
   novaTarefa.value = '';
 }
 
+
+
 function deleteTarefa(item) {
   const posicao = tarefas.value.findIndex(t => t.id === item.id);
-  tarefas.value.splice(posicao, 1);
+
+  if (posicao !== -1) {
+    tarefas.value.splice(posicao, 1);
+  }
 }
 
+
+
 function editTarefa(item) {
-  posicaoAlterar.value = tarefas.value.findIndex(t => t.id === item.id);
-  novaTarefa.value = tarefas.value[posicaoAlterar.value].desc;
+  idAlterar.value = item.id;
+  novaTarefa.value = item.desc;
 }
+
+
 function marcarConcluida(id) {
-  const posicao =
-    tarefas.value.findIndex(t => t.id == id);
-  if (tarefas.value[posicao].status == 'concluida') {
-    tarefas.value[posicao].status = 'pendente'
-  }
-  else {
-    tarefas.value[posicao].status = 'concluida'
+  const posicao = tarefas.value.findIndex(t => t.id === id);
+
+  if (posicao === -1) return;
+
+  if (tarefas.value[posicao].status === 'concluida') {
+    tarefas.value[posicao].status = 'pendente';
+  } else {
+    tarefas.value[posicao].status = 'concluida';
   }
 }
+
 </script>
 
 <template>
